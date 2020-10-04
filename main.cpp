@@ -35,9 +35,11 @@ private:
 	void _clear();
 	void _output();
 	void _random();
+	void _random_impl(T min, T max, size_t n);
 
 	void _sort();
 
+	unsigned long long _sort_count();
 private:
 	std::istream &_is;
 	std::ostream &_os;
@@ -93,19 +95,36 @@ void Main<T>::_output() {
 template <typename T>
 void Main<T>::_random() {
 	size_t n;
-	int min, max;
+	T min, max;
 	_os << "Number of items: ";
 	_is >> n;
 	_os << "Min and max: ";
 	_is >> min >> max;
 
+	_random_impl(min, max, n);
+}
+
+
+template <typename T>
+void Main<T>::_random_impl(T min, T max, size_t n) {
 	std::random_device rnd_device;
 	std::mt19937 mersenne_engine {rnd_device()};
-	std::uniform_int_distribution<int> dist{min, max};
-	for(auto i = 0; i < n; ++i){
+	std::uniform_int_distribution<T> dist{min, max};
+	for(size_t i = 0; i < n; ++i){
 		_arr.push_back(dist(mersenne_engine));
 	}
 }
+
+template <>
+void Main<double>::_random_impl(double min, double max, size_t n) {
+	std::random_device rnd_device;
+	std::mt19937 mersenne_engine {rnd_device()};
+	std::uniform_real_distribution<double> dist{min, max};
+	for(size_t i = 0; i < n; ++i){
+		_arr.push_back(dist(mersenne_engine));
+	}
+}
+
 
 template <typename T>
 void Main<T>::_sort() {
@@ -121,7 +140,7 @@ void Main<T>::_sort() {
 		time = measure_time(std::sort<typename DynamicArray<T>::iterator>, _arr.begin(), _arr.end());
 	}
 	else if(sort_method == "count"){
-		time = measure_time(counting_sort<typename DynamicArray<T>::iterator>, _arr.begin(), _arr.end());
+		time = _sort_count();
 	}
 	else if(sort_method == "tree"){
 		time = measure_time(tree_sort<typename DynamicArray<T>::iterator>, _arr.begin(), _arr.end());
@@ -135,6 +154,28 @@ void Main<T>::_sort() {
 }
 
 
+template <typename T>
+unsigned long long Main<T>::_sort_count() {
+	return measure_time(counting_sort<typename DynamicArray<T>::iterator>, _arr.begin(), _arr.end());
+}
+
+template <>
+unsigned long long Main<double>::_sort_count() {
+	int precision;
+	_os << "Select precision: ";
+	_is >> precision;
+
+	auto to_int = [precision](double val){
+		return static_cast<long long>(precision * val);
+	};
+	auto from_int = [precision](long long val){
+		return static_cast<double>(val) / precision;
+	};
+
+	auto sort_function = counting_sort< typename DynamicArray<double>::iterator,
+										std::function<long long(double)>, std::function<double(long long)>>;
+	return measure_time(sort_function, _arr.begin(), _arr.end(), to_int, from_int);
+}
 
 template<typename T>
 void Main<T>::_loop() {
@@ -171,17 +212,19 @@ void Main<T>::stop() {
 
 
 int main() {
-	Main<int> main(std::cin, std::cout);
-	main.start();
+	std::string datatype;
+	std::cout << "Select datatype (int, double): ";
+	std::cin >> datatype;
 
-//	size_t n = 11;
-//	int a[] = {0, 1, 5, 2, 2, 5, 3, 21, 1, 6, 4};
-//	DynamicArray<int> arr(a, n, true);
-////	quick_sort(arr.begin(), arr.end());
-////	counting_sort(arr.begin(), arr.end());
-//	tree_sort(arr.begin(), arr.end());
-//
-//	for(size_t i = 0; i < n; ++i){
-//		printf("%d\n", a[i]);
-//	}
+	if(datatype == "int") {
+		Main<int> main(std::cin, std::cout);
+		main.start();
+	}
+	else if(datatype == "double") {
+		Main<double> main(std::cin, std::cout);
+		main.start();
+	}
+	else {
+		std::cout << "Incorrect datatype\n";
+	}
 }
