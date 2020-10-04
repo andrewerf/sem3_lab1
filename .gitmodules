@@ -1,0 +1,6 @@
+[submodule "sem2_lab2"]
+	path = sem2_lab2
+	url = https://github.com/andrewerf/sem2_lab2.git
+[submodule "sem2_lab3"]
+	path = sem2_lab3
+	url = https://github.com/andrewerf/sem2_lab3.git
